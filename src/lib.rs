@@ -23,12 +23,9 @@ pub async fn fetch_encrypted() -> Result<String, Box<dyn Error>> {
     use reqwest::Client;
     use fake_user_agent::get_chrome_rua;
 
-
     let url = "https://www.racv.com.au/bin/racv/fuelprice.2.json";
 
-    // Build your header map
     let mut headers = HeaderMap::new();
-    // Set each header you'd like to replicate
     headers.insert(USER_AGENT, HeaderValue::from_static(get_chrome_rua()));
     headers.insert(ACCEPT, HeaderValue::from_static("text/plain, */*; q=0.01"));
     headers.insert("Cache-Control", HeaderValue::from_static("no-cache"));
@@ -39,15 +36,12 @@ pub async fn fetch_encrypted() -> Result<String, Box<dyn Error>> {
     headers.insert("Sec-Fetch-Site", HeaderValue::from_static("same-origin"));
     headers.insert("Te", HeaderValue::from_static("trailers"));
 
-    // Build the client with default headers
     let client = Client::builder()
         .default_headers(headers)
         .build()?;
 
-    // Send the GET request
     let response = client.get(url).send().await?;
-
-    // Return the response body as a String
+    // don't process response as json, as it's encrypted
     let body = response.text().await?;
     Ok(body)
 }
@@ -58,6 +52,7 @@ pub fn decrypt(encrypted: &str) -> Value {
 
     type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
     let secret = b"gUkXp2s5v8y/B?E(";
+    // as for aes128cbc, the IV must be 16 bytes
     let iv = secret.clone();
 
     let encrypted_bytes = base64::decode(encrypted).expect("Failed to decode base64");
