@@ -2,7 +2,7 @@
 name = "racv-fuel-price-api"
 version = "0.1.0"
 edition = "2021"
-authors = [ "Frank Lan <frank.lan@rea-group.com>" ]
+authors = [ "Frank Lan <franklan118@gmail.com>" ]
 
 [package.metadata.release]
 release = false
