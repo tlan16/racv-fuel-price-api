@@ -67,6 +67,5 @@ pub fn decrypt(encrypted: &str) -> Value {
     let decrypted_str = std::str::from_utf8(decrypted_bytes).expect("Failed to convert to UTF-8");
     let decrypted = serde_json::from_str::<serde_json::Value>(decrypted_str).expect("Failed to parse decoded string as JSON");
 
-    println!("{:#?}", decrypted_str);
     decrypted
 }
