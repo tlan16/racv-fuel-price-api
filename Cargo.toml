@@ -21,7 +21,7 @@ reqwest = "0.12.12"
 cipher = "^0.4.2"
 aes = "0.8.4"
 generic-array = "0.14.7"
-base64 = "0.13.1"
+base64 = "0.22.1"
 serde_json = "1.0.139"
 worker = { version="0.5.0", features=['http'] }
 console_error_panic_hook = { version = "0.1.1" }

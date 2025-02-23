@@ -1,5 +1,6 @@
-use std::error::Error;
+use base64::Engine;
 use serde_json::Value;
+use std::error::Error;
 
 #[worker::event(fetch)]
 async fn fetch(
@@ -10,18 +11,16 @@ async fn fetch(
     console_error_panic_hook::set_once();
     let encrypted = fetch_encrypted().await.unwrap();
     let decrypted = decrypt(&encrypted);
-    Ok(
-        worker::Response::builder()
-            .with_header("Content-Type", "application/json")
-            ?.with_status(200)
-            .from_json(&decrypted)?
-    )
+    Ok(worker::Response::builder()
+        .with_header("Content-Type", "application/json")?
+        .with_status(200)
+        .from_json(&decrypted)?)
 }
 
 pub async fn fetch_encrypted() -> Result<String, Box<dyn Error>> {
+    use fake_user_agent::get_chrome_rua;
     use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT};
     use reqwest::Client;
-    use fake_user_agent::get_chrome_rua;
 
     let url = "https://www.racv.com.au/bin/racv/fuelprice.2.json";
 
@@ -36,9 +35,7 @@ pub async fn fetch_encrypted() -> Result<String, Box<dyn Error>> {
     headers.insert("Sec-Fetch-Site", HeaderValue::from_static("same-origin"));
     headers.insert("Te", HeaderValue::from_static("trailers"));
 
-    let client = Client::builder()
-        .default_headers(headers)
-        .build()?;
+    let client = Client::builder().default_headers(headers).build()?;
 
     let response = client.get(url).send().await?;
     // don't process response as json, as it's encrypted
@@ -55,17 +52,20 @@ pub fn decrypt(encrypted: &str) -> Value {
     // as for aes128cbc, the IV must be 16 bytes
     let iv = secret.clone();
 
-    let encrypted_bytes = base64::decode(encrypted).expect("Failed to decode base64");
+    let encrypted_bytes = base64::engine::general_purpose::STANDARD
+        .decode(encrypted)
+        .expect("Failed to decode base64");
 
     let mut buf = encrypted_bytes.clone();
     let decrypted_bytes = Aes128CbcDec::new(
         GenericArray::from_slice(secret),
-        GenericArray::from_slice(&iv)
+        GenericArray::from_slice(&iv),
     )
-        .decrypt_padded_mut::<Pkcs7>(&mut buf)
-        .expect("Decryption failed");
+    .decrypt_padded_mut::<Pkcs7>(&mut buf)
+    .expect("Decryption failed");
     let decrypted_str = std::str::from_utf8(decrypted_bytes).expect("Failed to convert to UTF-8");
-    let decrypted = serde_json::from_str::<serde_json::Value>(decrypted_str).expect("Failed to parse decoded string as JSON");
+    let decrypted = serde_json::from_str::<serde_json::Value>(decrypted_str)
+        .expect("Failed to parse decoded string as JSON");
 
     decrypted
 }
